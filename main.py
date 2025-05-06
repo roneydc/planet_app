@@ -29,7 +29,7 @@ def main():
     if os.environ.get("PL_API_KEY", ""):
         api_key = os.environ.get("PL_API_KEY", "")
     else:
-        api_key = "PLAK805b9eb52f66425da22c4b3de567a953"
+        api_key = ""
 
     if api_key:
         app.config_tab.api_key_var.set(api_key)
