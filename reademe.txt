@@ -1,0 +1,132 @@
+# Guia de Instalação e Uso do Planet App
+
+Este guia explica como instalar e usar a aplicação refatorada do Planet App.
+
+## Estrutura do Projeto
+
+A aplicação foi refatorada para seguir uma estrutura modular:
+
+```
+planet_app/
+│
+├── __init__.py                 # Torna o diretório um pacote Python
+├── main.py                     # Ponto de entrada da aplicação
+│
+├── core/                       # Componentes principais
+│   ├── __init__.py
+│   ├── file_manager.py         # Gerenciamento de arquivos
+│   ├── api_handler.py          # Manipulação da API Planet
+│   └── planet_app.py           # Classe principal da aplicação
+│
+├── gui/                        # Interface gráfica
+│   ├── __init__.py
+│   ├── app.py                  # Classe principal da GUI
+│   ├── config_tab.py           # Aba de configuração
+│   ├── shapefile_tab.py        # Aba de processamento de shapefile
+│   ├── search_tab.py           # Aba de busca de imagens
+│   └── download_tab.py         # Aba de download
+│
+├── utils/                      # Utilitários
+│   ├── __init__.py
+│   └── logging_config.py       # Configuração de logging
+│
+└── resources/                  # Recursos estáticos (ícones, etc.)
+    └── __init__.py
+```
+
+## Instalação
+
+### Pré-requisitos
+
+- Python 3.6 ou superior
+- Bibliotecas: tkinter, requests, python-dateutil
+
+### Passos para Instalação
+
+1. Clone o repositório ou extraia os arquivos para uma pasta
+
+2. Instale as dependências:
+   ```
+   pip install requests python-dateutil
+   ```
+
+3. Navegue até o diretório raiz do projeto e instale o pacote em modo de desenvolvimento:
+   ```
+   pip install -e .
+   ```
+
+## Executando a Aplicação
+
+Para executar a aplicação, use um dos seguintes métodos:
+
+### Método 1: Usando o módulo principal
+
+```
+python -m planet_app.main
+```
+
+### Método 2: Executando o script diretamente
+
+```
+python path/to/planet_app/main.py
+```
+
+## Uso da Aplicação
+
+1. **Configuração**
+   - Na primeira aba, insira sua chave de API da Planet
+   - Clique em "Validar Chave" para verificar sua autenticação
+
+2. **Processamento de Shapefile**
+   - Na segunda aba, selecione um arquivo shapefile (.shp)
+   - Clique em "Processar Shapefile para JSON"
+   - Após o processamento, você será redirecionado para a próxima etapa
+
+3. **Busca de Imagens**
+   - Defina os parâmetros de busca: data de início, data de fim e cobertura de nuvens
+   - Clique em "Buscar Imagens"
+   - Selecione as imagens de interesse na lista de resultados
+   - Clique em "Criar Ordem de Download"
+
+4. **Download de Imagens**
+   - Selecione o arquivo de links gerado na etapa anterior
+   - Clique em "Iniciar Download"
+   - Acompanhe o progresso do download na barra de progresso
+
+## Configurações Avançadas
+
+### Variáveis de Ambiente
+
+- `PL_API_KEY`: Defina esta variável de ambiente para carregar automaticamente sua chave de API
+
+### Logs
+
+Os logs da aplicação são salvos em:
+- `~/planet_app_logs/planet_app.log`
+
+## Solução de Problemas
+
+Se encontrar problemas ao executar a aplicação:
+
+1. Verifique se todas as dependências estão instaladas
+2. Consulte os logs para mais informações sobre erros
+3. Verifique sua conexão com a internet e autenticação da API
+
+## Desenvolvimento
+
+### Adicionando Novas Funcionalidades
+
+Para adicionar novas funcionalidades:
+
+1. Identifique o módulo apropriado para a nova função
+2. Adicione a funcionalidade seguindo o padrão de design existente
+3. Atualize a interface gráfica conforme necessário
+4. Teste a nova funcionalidade
+
+### Executando Testes
+
+Testes podem ser adicionados no diretório `tests/` e executados com:
+
+```
+pytest tests/
+```
