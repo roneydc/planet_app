@@ -104,18 +104,24 @@ class SearchTab:
         # Lista de imagens encontradas
         self.images_tree = ttk.Treeview(
             self.search_results_frame,
-            columns=("ID", "Data", "Cobertura de Nuvens"),
+            columns=("ID", "Data", "Cobertura de Nuvens", "gsd"),
             show="headings"
         )
-        self.images_tree.heading("ID", text="ID da Imagem")
+        self.images_tree.heading("ID", text="Nome da Imagem")
         self.images_tree.heading("Data", text="Data")
         self.images_tree.heading("Cobertura de Nuvens", text="Cobertura de Nuvens")
+        self.images_tree.heading('gsd', text='GSD (m)')
         
         self.images_tree.column("ID", width=250)
-        self.images_tree.column("Data", width=180)
-        self.images_tree.column("Cobertura de Nuvens", width=150)
+        self.images_tree.column("Data", width=120)
+        self.images_tree.column("Cobertura de Nuvens", width=100)
+        self.images_tree.column('gsd', width=80)
         
-        self.images_tree.pack(fill=tk.BOTH, expand=True)
+        # Adicionar scrollbar
+        scrollbar = ttk.Scrollbar(self.search_results_frame, orient="vertical", command=self.images_tree.yview)
+        self.images_tree.configure(yscrollcommand=scrollbar.set)
+        self.images_tree.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
         
         # Botão para criar ordem
         order_frame = ttk.Frame(self.frame)
@@ -126,6 +132,19 @@ class SearchTab:
             text="Criar Ordem de Download",
             command=self._create_order
         ).pack(side=tk.RIGHT)
+            # Botão para selecionar todas as imagens
+        ttk.Button(
+            order_frame,
+            text="Selecionar Todas",
+            command=self._select_all_images
+        ).pack(side=tk.LEFT, padx=5)
+        
+        # Botão para limpar seleção
+        ttk.Button(
+            order_frame,
+            text="Limpar Seleção",
+            command=self._clear_selection
+        ).pack(side=tk.LEFT, padx=5)
     
     def _select_json_file(self):
         """Seleciona um arquivo JSON"""
@@ -197,13 +216,41 @@ class SearchTab:
         
         # Preencher a tabela com as imagens encontradas
         for img in images:
+            #print(img) # Debug: Imprimir cada imagem encontrada
+            # Verificar se a data é uma string ou um objeto datetime
+            date_str = img["date"]
+            if isinstance(date_str, str):
+                # Tentar converter a string para um objeto datetime
+                try:
+                    from dateutil import parser
+                    date_obj = parser.parse(date_str)
+                    formatted_date = date_obj.strftime("%Y-%m-%d %H:%M:%S")
+                except:
+                    # Se falhar, usar a string diretamente
+                    formatted_date = date_str
+            else:
+                # Se já for um objeto datetime
+                formatted_date = date_str.strftime("%Y-%m-%d %H:%M:%S")
+            
+            # Obter o GSD (Ground Sample Distance) se disponível
+            gsd = img.get("gsd", "")
+            if gsd:
+                try:
+                    gsd_formatted = f"{float(gsd):.2f}"
+                except:
+                    gsd_formatted = str(gsd)
+            else:
+                gsd_formatted = "N/A"
+            
+            # Inserir na tabela
             self.images_tree.insert(
                 "", 
                 "end", 
                 values=(
-                    img["id"], 
-                    img["date"].strftime("%Y-%m-%d %H:%M:%S"), 
-                    f"{img['cloud_cover']:.2f}"
+                    img["area_name"], 
+                    formatted_date,
+                    f"{img['cloud_cover']:.2f}",
+                    gsd_formatted
                 )
             )
         
@@ -215,9 +262,24 @@ class SearchTab:
         # Perguntar ao usuário se deseja criar uma ordem
         if messagebox.askyesno("Sucesso", "Deseja criar uma ordem de download para estas imagens?"):
             self._create_order()
+            
+
+
+
+
     
+    def _select_all_images(self):
+        """Seleciona todas as imagens na tabela"""
+        for item in self.images_tree.get_children():
+            self.images_tree.selection_add(item)
+        
+    def _clear_selection(self):
+        """Limpa a seleção na tabela"""
+        self.images_tree.selection_remove(self.images_tree.selection())
+
     def _create_order(self):
         """Cria uma ordem para as imagens selecionadas"""
+        # Verificar se há imagens encontradas
         if not self.found_images:
             messagebox.showerror("Erro", "Nenhuma imagem encontrada. Por favor, faça uma busca primeiro.")
             return
@@ -226,32 +288,19 @@ class SearchTab:
         selected_items = self.images_tree.selection()
         
         if not selected_items:
-            # Se nenhum item estiver selecionado, usar todas as imagens
+            # Se nenhum item estiver selecionado, perguntar ao usuário
+            if not messagebox.askyesno("Nenhuma Seleção", "Nenhuma imagem selecionada. Deseja criar ordens para todas as imagens encontradas?"):
+                return
+            
+            # Usar todas as imagens
             selected_images = self.found_images
-            message = "Nenhuma imagem específica selecionada. Criando ordem para todas as imagens."
-            messagebox.showinfo("Informação", message)
         else:
             # Obter apenas as imagens selecionadas
             selected_indices = [self.images_tree.index(item) for item in selected_items]
             selected_images = [self.found_images[i] for i in selected_indices]
         
-        self.main_app.update_status(f"Criando ordem para {len(selected_images)} imagens...")
-        
-        # Criar ordem em uma thread separada
-        def order_thread():
-            try:
-                order = self.main_app.planet_app.create_order(selected_images)
-                
-                # Atualizar UI na thread principal
-                self.frame.after(0, lambda: self._update_order_result(order))
-            except Exception as e:
-                logger.error(f"Erro ao criar ordem: {e}")
-                # Atualizar UI na thread principal
-                self.frame.after(0, lambda: messagebox.showerror("Erro", f"Erro ao criar ordem: {e}"))
-                self.frame.after(0, lambda: self.main_app.update_status("Erro ao criar ordem."))
-        
-        threading.Thread(target=order_thread).start()
-    
+        self.main_app.update_status(f"Criando ordens para {len(selected_images)} imagens...")
+
     def _update_order_result(self, order):
         """
         Atualiza o resultado da criação de ordem

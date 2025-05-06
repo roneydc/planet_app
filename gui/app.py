@@ -20,7 +20,7 @@ class PlanetAppGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Planet API Manager")
-        self.root.geometry("800x600")
+        self.root.geometry("800x700")
         self.planet_app = None
         self.file_manager = FileManager()
         
