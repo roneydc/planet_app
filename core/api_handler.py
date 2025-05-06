@@ -22,22 +22,38 @@ class PlanetAPIHandler:
     
     def initialize_session(self):
         """
-        Inicializa a sessão para comunicação com a API
+        Inicializa a sessão para comunicação com a API e valida a autenticação
         
         Returns:
-            bool: True se a sessão foi inicializada com sucesso, False caso contrário
+            bool: True se a sessão foi inicializada com sucesso e a autenticação é válida, False caso contrário
         """
-        # Inicializar a sessão com a API da Planet
         try:
+            # Criar a sessão
             self.session = requests.Session()
             self.session.auth = (self.api_key, '')
-            res = self.session.get(self.url_base)
-            if res.status_code != 200:
-                logger.error(f"Falha ao conectar com a API da Planet: {res.status_code}")
+            
+            # Teste inicial de conexão
+            base_response = self.session.get(self.url_base)
+            if base_response.status_code != 200:
+                logger.error(f"Falha na conexão básica com a API: {base_response.status_code}")
+                return False
+                
+            # Tentar acessar um endpoint protegido que requer autenticação válida
+            # Por exemplo, tentar listar os recursos disponíveis ou obter informações do usuário
+            auth_test_endpoint = f"{self.url_base}asset-types"  # Endpoint que requer autenticação
+            auth_response = self.session.get(auth_test_endpoint)
+            
+            # Verificar se a resposta indica autenticação bem-sucedida
+            if auth_response.status_code == 200:
+                logger.info("Sessão API inicializada e autenticação válida")
+                return True
+            elif auth_response.status_code == 401 or auth_response.status_code == 403:
+                logger.error(f"Falha na autenticação com a API: {auth_response.status_code}   verifique sua chave de API")
                 return False
             else:
-                logger.info(f"Sessao API inicializada {res.status_code}")
-                return True
+                logger.warning(f"Resposta inesperada ao testar autenticação: {auth_response.status_code}   verifique sua chave de API")
+                return False
+                
         except Exception as e:
             logger.error(f"Erro ao inicializar sessão: {e}")
             return False

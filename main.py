@@ -7,10 +7,15 @@ import os
 import tkinter as tk
 import sys
 
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from gui.app import PlanetAppGUI
 from utils.logging_config import setup_logging
+
+# Carregar variáveis de ambiente do arquivo .env, se existir
+from dotenv import load_dotenv
+load_dotenv()  # Carrega as variáveis do arquivo .env
 
 def main():
     """Função principal para iniciar a aplicação"""
@@ -29,7 +34,7 @@ def main():
     if os.environ.get("PL_API_KEY", ""):
         api_key = os.environ.get("PL_API_KEY", "")
     else:
-        api_key = ""
+        api_key = "sua_chave_de_api_aqui"  # Substitua pela sua chave de API padrão
 
     if api_key:
         app.config_tab.api_key_var.set(api_key)

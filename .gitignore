@@ -22,6 +22,7 @@ var/
 
 # Arquivos de log
 *.log
+*.env
 
 # Diretório de saída da aplicação
 output/
